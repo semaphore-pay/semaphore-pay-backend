@@ -17,6 +17,13 @@
 	"upload_source_maps": true,
 	"compatibility_flags": [
 		"nodejs_compat"
+	],
+	"d1_databases": [
+		{
+			"binding": "semaphore_db",
+			"database_name": "semaphore_db",
+			"database_id": "4d12c66c-a383-4b6d-ac09-795b80dc87ac"
+		}
 	]
 	/**
 	 * Smart Placement

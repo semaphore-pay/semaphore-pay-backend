@@ -38,7 +38,7 @@ export const getAuth = (env: HonoEnv['Bindings']) => {
     },
     baseURL: env.BETTER_AUTH_URL || 'http://localhost:8787',
     basePath: '/api/auth',
-    trustedOrigins: ['https://dash.semaphore.tech'],
+    trustedOrigins: ['https://dash.semaphorepay.tech', 'exp://127.0.0.1:8081'],
     plugins: [
       magicLink({
         sendMagicLink: async ({ email, token, url }, request) => {

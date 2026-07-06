@@ -17,11 +17,18 @@ import {
   upsertCustomer,
   getCustomer,
 } from '@semaphore-pay/server';
+import {
+  get as getSubscription,
+  list as listSubscriptionsApi,
+  pause as pauseSubscription,
+  resume as resumeSubscription,
+  reactivate as reactivateSubscription,
+} from '@semaphore-pay/server/subscription';
 import type { SemaphorePayEngine } from '@semaphore-pay/server';
 import * as sqliteSchema from '@semaphore-pay/server/schema/sqlite';
 import { requireAuth } from '../../lib/auth';
 import { checkQuota } from '../../services/quotas';
-import { getCollectionStats } from '../../services/analytics';
+import { getCollectionStats, getCollectionAnalytics } from '../../services/analytics';
 import { logger } from '../../lib/logger';
 import {
   zValidator,
@@ -147,6 +154,33 @@ billing.get('/collections/:id', async (c) => {
   const engine = getEngine(c.env);
   const stats = await getCollectionStats(engine, collectionId);
   return c.json({ ...col, ...stats });
+});
+
+billing.get('/collections/:id/analytics', async (c) => {
+  const auth = requireAuth(c);
+  if (auth instanceof Response) return auth;
+  const { user } = auth;
+  const db = drizzle(c.env.semaphore_db);
+  const collectionId = c.req.param('id');
+
+  const key = await db
+    .select()
+    .from(sqliteSchema.apiKey)
+    .where(
+      and(
+        eq(sqliteSchema.apiKey.collectionId, collectionId),
+        eq(sqliteSchema.apiKey.userId, user.id)
+      )
+    )
+    .get();
+
+  if (!key) {
+    return c.json({ error: 'Collection not found' }, 404);
+  }
+
+  const engine = getEngine(c.env);
+  const analytics = await getCollectionAnalytics(engine, collectionId);
+  return c.json(analytics);
 });
 
 billing.delete('/collections/:id', async (c) => {
@@ -297,6 +331,73 @@ billing.post('/collections/:collectionId/subscriptions/:subscriptionId/cancel', 
 
   const result = await cancel(engine, subscriptionId, { collectionId });
   return c.json(result);
+});
+
+billing.get('/collections/:collectionId/subscriptions', async (c) => {
+  const engine = getEngine(c.env);
+  const collectionId = c.req.param('collectionId');
+  const status = c.req.query('status') ?? undefined;
+  const planId = c.req.query('planId') ?? undefined;
+  const customerId = c.req.query('customerId') ?? undefined;
+  const limit = c.req.query('limit') ? parseInt(c.req.query('limit')!) : undefined;
+  const offset = c.req.query('offset') ? parseInt(c.req.query('offset')!) : undefined;
+
+  const result = await listSubscriptionsApi(engine as any, { status, planId, customerId, limit, offset }, {
+    collectionId,
+    environment: 'development',
+  });
+  return c.json(result);
+});
+
+billing.get('/collections/:collectionId/subscriptions/:subscriptionId', async (c) => {
+  const engine = getEngine(c.env);
+  const collectionId = c.req.param('collectionId');
+  const subscriptionId = c.req.param('subscriptionId');
+
+  const result = await getSubscription(engine as any, { subscriptionId }, { collectionId });
+  return c.json(result ?? null);
+});
+
+billing.post('/collections/:collectionId/subscriptions/:subscriptionId/pause', async (c) => {
+  const engine = getEngine(c.env);
+  const collectionId = c.req.param('collectionId');
+  const subscriptionId = c.req.param('subscriptionId');
+
+  try {
+    const result = await pauseSubscription(engine as any, subscriptionId, { collectionId });
+    return c.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return c.json({ error: message }, 400);
+  }
+});
+
+billing.post('/collections/:collectionId/subscriptions/:subscriptionId/resume', async (c) => {
+  const engine = getEngine(c.env);
+  const collectionId = c.req.param('collectionId');
+  const subscriptionId = c.req.param('subscriptionId');
+
+  try {
+    const result = await resumeSubscription(engine as any, subscriptionId, { collectionId });
+    return c.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return c.json({ error: message }, 400);
+  }
+});
+
+billing.post('/collections/:collectionId/subscriptions/:subscriptionId/reactivate', async (c) => {
+  const engine = getEngine(c.env);
+  const collectionId = c.req.param('collectionId');
+  const subscriptionId = c.req.param('subscriptionId');
+
+  try {
+    const result = await reactivateSubscription(engine as any, subscriptionId, { collectionId });
+    return c.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return c.json({ error: message }, 400);
+  }
 });
 
 // ==================== ENTITLEMENTS ====================

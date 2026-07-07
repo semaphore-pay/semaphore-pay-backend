@@ -5,6 +5,7 @@ import * as schema from '../db/schema';
 import { HonoEnv } from '../types';
 import { magicLink } from 'better-auth/plugins';
 import { APIError } from 'better-auth/api';
+import { initSemaphorePay, createCollection, createApiKey } from '@semaphore-pay/server';
 
 import { magicLinkEmail } from '../data/email-templates/magicLinkEmail';
 
@@ -38,7 +39,11 @@ export const getAuth = (env: HonoEnv['Bindings']) => {
     },
     baseURL: env.BETTER_AUTH_URL || 'http://localhost:8787',
     basePath: '/api/auth',
-    trustedOrigins: ['https://dash.semaphorepay.tech', 'exp://127.0.0.1:8081'],
+    trustedOrigins: [
+      'https://dash.semaphorepay.tech',
+      'exp://127.0.0.1:8081',
+      'http://localhost:5173',
+    ],
     plugins: [
       magicLink({
         sendMagicLink: async ({ email, token, url }, request) => {
@@ -62,6 +67,28 @@ export const getAuth = (env: HonoEnv['Bindings']) => {
         },
       }),
     ],
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            const db = drizzle(env.semaphore_db);
+            const engine = initSemaphorePay({ dialect: 'sqlite', db, supportsTransactions: false });
+            const collection = await createCollection(engine, 'Sandbox');
+            await createApiKey(engine, {
+              collectionId: collection.id,
+              type: 'public',
+              environment: 'development',
+              userId: user.id,
+            });
+            await createApiKey(engine, {
+              collectionId: collection.id,
+              type: 'secret',
+              environment: 'development',
+            });
+          },
+        },
+      },
+    },
   });
 };
 

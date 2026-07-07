@@ -1,7 +1,10 @@
 import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
-  schema: './src/db/schema.ts',
+  schema: [
+    './src/db/schema.ts',
+    'node_modules/@semaphore-pay/server/dist/database/schema/sqlite.js',
+  ],
   out: './migrations',
   dialect: 'sqlite',
   driver: 'd1-http',

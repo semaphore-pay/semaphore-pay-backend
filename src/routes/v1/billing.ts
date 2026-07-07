@@ -10,6 +10,8 @@ import {
   create,
   list,
   get,
+  deactivate,
+  remove,
   subscribe,
   cancel,
   check,
@@ -45,7 +47,7 @@ import type { HonoEnv } from '../../types';
 const billing = new Hono<HonoEnv>();
 
 function getEngine(env: HonoEnv['Bindings']): SemaphorePayEngine<'sqlite'> {
-  const db = drizzle(env.semaphore_db);
+  const db = drizzle(env.semaphore_db, { schema: sqliteSchema });
   return initSemaphorePay({ dialect: 'sqlite', db, supportsTransactions: false });
 }
 
@@ -251,6 +253,24 @@ billing.get('/collections/:collectionId/plans/:planId', async (c) => {
 
   const result = await get(engine, { planId }, { collectionId, environment: 'development' });
   return c.json(result ?? null);
+});
+
+billing.post('/collections/:collectionId/plans/:planId/deactivate', async (c) => {
+  const engine = getEngine(c.env);
+  const collectionId = c.req.param('collectionId');
+  const planId = c.req.param('planId');
+
+  const result = await deactivate(engine, { planId }, { collectionId, environment: 'development' });
+  return c.json(result);
+});
+
+billing.delete('/collections/:collectionId/plans/:planId', async (c) => {
+  const engine = getEngine(c.env);
+  const collectionId = c.req.param('collectionId');
+  const planId = c.req.param('planId');
+
+  await remove(engine, { planId }, { collectionId, environment: 'development' });
+  return c.json({ success: true });
 });
 
 // ==================== PRODUCTS ====================

@@ -29,7 +29,7 @@
 			"binding": "semaphore_db",
 			"database_name": "semaphore_db",
 			"database_id": "4d12c66c-a383-4b6d-ac09-795b80dc87ac",
-			"migrations_dir": "drizzle"
+			"migrations_dir": "migrations"
 		}
 	],
 	"routes": [

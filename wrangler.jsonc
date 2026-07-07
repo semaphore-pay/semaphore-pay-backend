@@ -41,9 +41,13 @@
 		}
 	],
 	"triggers": {
-		"crons": ["0 * * * *", "0 0 * * *"]
+		"crons": [
+			"0 * * * *",
+			"0 0 * * *"
+		]
 	},
 	"vars": {
-		"BETTER_AUTH_URL": "https://api.semaphorepay.tech"
+		"BETTER_AUTH_URL": "https://api.semaphorepay.tech",
+		"NOMBA_CHECKOUT_CALLBACK_URL": "https://api.semaphorepay.tech/webhook"
 	}
 }

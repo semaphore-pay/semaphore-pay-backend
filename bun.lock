@@ -6,7 +6,7 @@
       "name": "semaphore-pay-backend",
       "dependencies": {
         "@hono/zod-validator": "^0.8.0",
-        "@semaphore-pay/server": "^0.1.6",
+        "@semaphore-pay/server": "^0.1.21",
         "better-auth": "^1.6.23",
         "drizzle-orm": "^0.45.2",
         "hono": "^4.12.27",
@@ -215,7 +215,7 @@
 
     "@poppinss/exception": ["@poppinss/exception@1.2.3", "", {}, "sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw=="],
 
-    "@semaphore-pay/server": ["@semaphore-pay/server@0.1.6", "", { "dependencies": { "better-auth": "^1.6.20", "drizzle-orm": "^0.45.2", "hono": "^4.12.27", "ioredis": "^5.11.1" } }, "sha512-TnBa4TszgjH7t6Gfy/3hEvluNZpqCMJswZeLXJnvFYJFkT72H+4gMylTUyqQW1SYB37As4cV8N2P9I9jijZEWA=="],
+    "@semaphore-pay/server": ["@semaphore-pay/server@0.1.21", "", { "dependencies": { "better-auth": "^1.6.20", "drizzle-orm": "^0.45.2", "hono": "^4.12.27", "ioredis": "^5.11.1" } }, "sha512-KfhqEfyvIHreFE9uDoJKjYd780GsxjcYUq74Fs5mem6ySppr/CJNs9NgOUKsgeMZcX2paCCE1dA0EPQvC56jMg=="],
 
     "@sindresorhus/is": ["@sindresorhus/is@7.2.0", "", {}, "sha512-P1Cz1dWaFfR4IR+U13mqqiGsLFf1KbayybWwdd2vfctdV6hDpUkgCY0nKOLLTMSoRd/jJNjtbqzf13K8DCCXQw=="],
 

@@ -31,6 +31,7 @@ export const zValidator = <T extends z.ZodSchema, Target extends keyof Validatio
 
 export const createCollectionSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
+  environment: z.enum(['sandbox', 'production']).optional().default('sandbox'),
 });
 
 // ==================== PLANS ====================
@@ -62,6 +63,14 @@ export const createPlanSchema = z.object({
 
 // ==================== PRODUCTS ====================
 
+const productFeatureSchema = z.object({
+  featureId: z.string(),
+  type: z.enum(['boolean', 'limit']),
+  limit: z.number().int().nullable().optional(),
+  resetInterval: z.enum(['day', 'week', 'month', 'year']).nullable().optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
+});
+
 export const createProductSchema = z.object({
   id: z.string().min(1, 'Product ID is required'),
   name: z.string().min(1, 'Name is required'),
@@ -71,17 +80,18 @@ export const createProductSchema = z.object({
   priceCurrency: z.string().optional(),
   priceInterval: z.string().optional(),
   version: z.number().int().optional(),
-  features: z
-    .array(
-      z.object({
-        featureId: z.string(),
-        type: z.enum(['boolean', 'limit']),
-        limit: z.number().int().nullable().optional(),
-        resetInterval: z.enum(['day', 'week', 'month', 'year']).nullable().optional(),
-        config: z.record(z.string(), z.unknown()).optional(),
-      }),
-    )
-    .optional(),
+  features: z.array(productFeatureSchema).optional(),
+});
+
+export const updateProductSchema = z.object({
+  name: z.string().optional(),
+  group: z.string().optional(),
+  isDefault: z.boolean().optional(),
+  priceAmount: z.number().int().min(0).nullable().optional(),
+  priceCurrency: z.string().optional(),
+  priceInterval: z.string().optional(),
+  version: z.number().int().optional(),
+  features: z.array(productFeatureSchema).optional(),
 });
 
 // ==================== CUSTOMERS ====================
@@ -113,4 +123,30 @@ export const reportEntitlementSchema = z.object({
   customerId: z.string().min(1, 'customerId is required'),
   featureId: z.string().min(1, 'featureId is required'),
   amount: z.number().int().min(1).optional(),
+});
+
+// ==================== FEATURES ====================
+
+export const createFeatureSchema = z.object({
+  id: z.string().min(1, 'Feature ID is required'),
+  name: z.string().min(1, 'Feature name is required'),
+  type: z.enum(['boolean', 'limit']),
+});
+
+export const attachPlanFeatureSchema = z.object({
+  planId: z.string().min(1, 'planId is required'),
+  featureId: z.string().min(1, 'featureId is required'),
+  type: z.enum(['boolean', 'limit']),
+  limit: z.number().int().nonnegative().optional().nullable(),
+  resetInterval: z.enum(['day', 'week', 'month', 'year']).optional().nullable(),
+  config: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const attachProductFeatureSchema = z.object({
+  productInternalId: z.string().min(1, 'productInternalId is required'),
+  featureId: z.string().min(1, 'featureId is required'),
+  type: z.enum(['boolean', 'limit']),
+  limit: z.number().int().nonnegative().optional().nullable(),
+  resetInterval: z.enum(['day', 'week', 'month', 'year']).optional().nullable(),
+  config: z.record(z.string(), z.unknown()).optional(),
 });

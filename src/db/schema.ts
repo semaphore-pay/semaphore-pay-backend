@@ -85,7 +85,71 @@ export const systemLogs = sqliteTable(
   table => [
     index('system_logs_level_idx').on(table.level),
     index('system_logs_user_idx').on(table.userId),
-    index('system_logs_retain_idx').on(table.retainUntil), // for the 90-day cleanup cron
+    index('system_logs_retain_idx').on(table.retainUntil),
     index('system_logs_created_idx').on(table.createdAt),
+  ]
+);
+
+export const balance = sqliteTable(
+  'semaphore_pay_balance',
+  {
+    id: text('id').primaryKey(),
+    collectionId: text('collection_id').notNull(),
+    available: integer('available').notNull().default(0),
+    pending: integer('pending').notNull().default(0),
+    totalEarned: integer('total_earned').notNull().default(0),
+    platformFeeRate: integer('platform_fee_rate').notNull().default(135),
+    currency: text('currency').notNull().default('NGN'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  table => [
+    index('semaphore_pay_balance_collection_idx').on(table.collectionId),
+  ]
+);
+
+export const payout = sqliteTable(
+  'semaphore_pay_payout',
+  {
+    id: text('id').primaryKey(),
+    collectionId: text('collection_id').notNull(),
+    amount: integer('amount').notNull(),
+    fee: integer('fee').notNull().default(0),
+    netAmount: integer('net_amount').notNull(),
+    status: text('status', { enum: ['pending', 'processing', 'completed', 'failed'] }).notNull().default('pending'),
+    bankAccountNumber: text('bank_account_number'),
+    bankCode: text('bank_code'),
+    bankName: text('bank_name'),
+    accountName: text('account_name'),
+    nombaTransferId: text('nomba_transfer_id'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  table => [
+    index('semaphore_pay_payout_collection_idx').on(table.collectionId),
+  ]
+);
+
+export const metricSnapshot = sqliteTable(
+  'semaphore_pay_metric_snapshot',
+  {
+    id: text('id').primaryKey(),
+    collectionId: text('collection_id').notNull(),
+    date: text('date').notNull(),
+    features: integer('features').notNull().default(0),
+    booleanFeatures: integer('boolean_features').notNull().default(0),
+    limitFeatures: integer('limit_features').notNull().default(0),
+    plans: integer('plans').notNull().default(0),
+    activePlans: integer('active_plans').notNull().default(0),
+    products: integer('products').notNull().default(0),
+    customers: integer('customers').notNull().default(0),
+    activeSubscriptions: integer('active_subscriptions').notNull().default(0),
+    trialingSubscriptions: integer('trialing_subscriptions').notNull().default(0),
+    churnedSubscriptions: integer('churned_subscriptions').notNull().default(0),
+    mrr: integer('mrr').notNull().default(0),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  table => [
+    index('semaphore_pay_metric_snapshot_collection_date_idx').on(table.collectionId, table.date),
   ]
 );

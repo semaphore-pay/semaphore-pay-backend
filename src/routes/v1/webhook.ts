@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
-import { initSemaphorePay, handleWebhook, sqliteSchema } from '@semaphore-pay/server';
+import { initSemaphorePay } from '@semaphore-pay/server';
+import { handleWebhook } from '@semaphore-pay/server/webhook';
+import * as sqliteSchema from '@semaphore-pay/server/schema/sqlite';
 import { logger } from '../../lib/logger';
 import { balance } from '../../db/schema';
 import type { HonoEnv } from '../../types';

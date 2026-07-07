@@ -1,43 +1,13 @@
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, sql } from 'drizzle-orm';
-import {
-  initSemaphorePay,
-  createCollection,
-  createApiKey,
-  createProduct,
-  listProducts,
-  getProduct,
-  updateProduct,
-  deleteProduct,
-  create,
-  list,
-  get,
-  deactivate,
-  reactivatePlanApi,
-  remove,
-  subscribe,
-  cancel,
-  check,
-  report,
-  upsertCustomer,
-  getCustomer,
-  listCustomersApi,
-  createFeatureApi,
-  listFeaturesApi,
-  removeFeatureApi,
-  attachPlan,
-  detachPlan,
-  attachProduct,
-  detachProduct,
-} from '@semaphore-pay/server';
-import {
-  get as getSubscription,
-  list as listSubscriptionsApi,
-  pause as pauseSubscription,
-  resume as resumeSubscription,
-  reactivate as reactivateSubscription,
-} from '@semaphore-pay/server/subscription';
+import { initSemaphorePay, createCollection, createApiKey } from '@semaphore-pay/server';
+import { createProduct, listProducts, getProduct, updateProduct, deleteProduct } from '@semaphore-pay/server/product';
+import { create, list, get, deactivate, reactivatePlanApi, remove } from '@semaphore-pay/server/plan';
+import { subscribe, cancel, get as getSubscription, list as listSubscriptionsApi, pause as pauseSubscription, resume as resumeSubscription, reactivate as reactivateSubscription } from '@semaphore-pay/server/subscription';
+import { check, report } from '@semaphore-pay/server/entitlement';
+import { upsertCustomer, getCustomer, listCustomersApi } from '@semaphore-pay/server/customer';
+import { create as createFeatureApi, list as listFeaturesApi, remove as removeFeatureApi, attachPlan, detachPlan, attachProduct, detachProduct } from '@semaphore-pay/server/feature';
 import type { SemaphorePayEngine } from '@semaphore-pay/server';
 import * as sqliteSchema from '@semaphore-pay/server/schema/sqlite';
 import { requireAuth } from '../../lib/auth';

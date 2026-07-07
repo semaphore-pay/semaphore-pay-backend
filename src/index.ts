@@ -9,7 +9,8 @@ import * as sqliteSchema from '@semaphore-pay/server/schema/sqlite';
 import { logger } from './lib/logger';
 import { BillingRoutes } from './routes/v1/billing';
 import { WebhookRoutes } from './routes/v1/webhook';
-import { runSemaphorePayCron, initSemaphorePay, createSemaphorePayRouter, NombaClient } from '@semaphore-pay/server';
+import { runSemaphorePayCron, initSemaphorePay, createSemaphorePayRouter } from '@semaphore-pay/server';
+import { NombaClient } from '@semaphore-pay/server/nomba';
 import { captureMetrics } from './services/metrics';
 
 const app = new Hono<HonoEnv>();

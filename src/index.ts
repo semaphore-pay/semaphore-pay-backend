@@ -9,29 +9,29 @@ import * as sqliteSchema from '@semaphore-pay/server/schema/sqlite';
 import { logger } from './lib/logger';
 import { BillingRoutes } from './routes/v1/billing';
 import { WebhookRoutes } from './routes/v1/webhook';
-import { runSemaphorePayCron, initSemaphorePay, createSemaphorePayRouter } from '@semaphore-pay/server';
+import {
+  runSemaphorePayCron,
+  initSemaphorePay,
+  createSemaphorePayRouter,
+} from '@semaphore-pay/server';
 import { NombaClient } from '@semaphore-pay/server/nomba';
 import { captureMetrics } from './services/metrics';
 
 const app = new Hono<HonoEnv>();
 
-// CORS
 app.use(
   '*',
   cors({
-    origin: (origin) => {
-      // Allow requests with no origin (curl, mobile apps, server-to-server)
+    origin: origin => {
       if (!origin) return '*';
-      // In production, restrict to FRONTEND_URL; in dev, allow localhost
       return origin;
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
     credentials: true,
   })
 );
 
-// Session resolution (Better Auth + query token fallback for Expo deep links)
 app.use('*', async (c, next) => {
   const auth = getAuth(c.env);
   const headers = new Headers(c.req.raw.headers);
@@ -63,8 +63,14 @@ app.use('*', async (c, next) => {
   }
 
   if (authSession?.user && authSession?.session) {
-    c.set('user', authSession.user as unknown as HonoEnv['Variables']['user']);
-    c.set('session', authSession.session as unknown as HonoEnv['Variables']['session']);
+    c.set(
+      'user',
+      (authSession.user as unknown) as HonoEnv['Variables']['user']
+    );
+    c.set(
+      'session',
+      (authSession.session as unknown) as HonoEnv['Variables']['session']
+    );
   }
 
   logger.bind(c.env, c.executionCtx);
@@ -94,16 +100,17 @@ const sdkEnginePlaceholder = initSemaphorePay({
 // Avoids race condition from shared mutable options.
 let nombaSandbox: any = null;
 let nombaLive: any = null;
-let nombaCallbackUrl: string = "";
+let nombaCallbackUrl: string = '';
 
 function getOrCreateNombaClients(env: any) {
-  if (!nombaCallbackUrl) nombaCallbackUrl = env.NOMBA_CHECKOUT_CALLBACK_URL ?? "";
+  if (!nombaCallbackUrl)
+    nombaCallbackUrl = env.NOMBA_CHECKOUT_CALLBACK_URL ?? '';
   if (!nombaSandbox && env.NOMBA_SANDBOX_CLIENT_ID) {
     nombaSandbox = new NombaClient({
       clientId: env.NOMBA_SANDBOX_CLIENT_ID,
       clientSecret: env.NOMBA_SANDBOX_CLIENT_SECRET,
       accountId: env.NOMBA_SANDBOX_ACCOUNT_ID,
-      environment: "sandbox",
+      environment: 'sandbox',
     });
   }
   if (!nombaLive && env.NOMBA_LIVE_CLIENT_ID) {
@@ -111,16 +118,22 @@ function getOrCreateNombaClients(env: any) {
       clientId: env.NOMBA_LIVE_CLIENT_ID,
       clientSecret: env.NOMBA_LIVE_CLIENT_SECRET,
       accountId: env.NOMBA_LIVE_ACCOUNT_ID,
-      environment: "production",
+      environment: 'production',
     });
   }
 }
 
 const sdkRouter = createSemaphorePayRouter(sdkEnginePlaceholder, {
   nombaClients: {
-    get sandbox() { return nombaSandbox; },
-    get production() { return nombaLive; },
-    get callbackUrl() { return nombaCallbackUrl; },
+    get sandbox() {
+      return nombaSandbox;
+    },
+    get production() {
+      return nombaLive;
+    },
+    get callbackUrl() {
+      return nombaCallbackUrl;
+    },
   },
 });
 
@@ -139,6 +152,7 @@ app.use('/client/*', async (c, next) => {
 
   await next();
 });
+
 app.route('/client', sdkRouter);
 
 // Static asset passthrough
@@ -160,15 +174,21 @@ const handler = {
         await runSemaphorePayCron(engine);
 
         // Capture metrics for each collection
-        const cols = await db.select({ id: sqliteSchema.collection.id }).from(sqliteSchema.collection);
+        const cols = await db
+          .select({ id: sqliteSchema.collection.id })
+          .from(sqliteSchema.collection);
         for (const col of cols) {
           try {
             await captureMetrics(engine, col.id);
           } catch (err) {
-            logger.error('metrics-cron', `Failed to capture metrics for collection ${col.id}`, { error: String(err) });
+            logger.error(
+              'metrics-cron',
+              `Failed to capture metrics for collection ${col.id}`,
+              { error: String(err) }
+            );
           }
         }
-      })(),
+      })()
     );
   },
 };

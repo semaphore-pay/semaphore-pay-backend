@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, sql } from 'drizzle-orm';
-import { initSemaphorePay, createCollection, createApiKey } from '@semaphore-pay/server';
+import { initSemaphorePay, createCollection, createApiKey, runSemaphorePayCron } from '@semaphore-pay/server';
+import { updateCollection } from '@semaphore-pay/server/api';
 import { createProduct, listProducts, getProduct, updateProduct, deleteProduct } from '@semaphore-pay/server/product';
 import { create, list, get, deactivate, reactivatePlanApi, remove } from '@semaphore-pay/server/plan';
 import { subscribe, cancel, get as getSubscription, list as listSubscriptionsApi, pause as pauseSubscription, resume as resumeSubscription, reactivate as reactivateSubscription } from '@semaphore-pay/server/subscription';
@@ -13,7 +14,7 @@ import * as sqliteSchema from '@semaphore-pay/server/schema/sqlite';
 import { requireAuth } from '../../lib/auth';
 import { checkQuota } from '../../services/quotas';
 import { getCollectionStats, getCollectionAnalytics } from '../../services/analytics';
-import { getMetricTrend, getMetricHistory } from '../../services/metrics';
+import { getMetricTrend, getMetricHistory, captureMetrics } from '../../services/metrics';
 import { balance } from '../../db/schema';
 import { logger } from '../../lib/logger';
 import {
@@ -181,6 +182,37 @@ billing.get('/collections/:id/analytics', async (c) => {
   const engine = getEngine(c.env);
   const analytics = await getCollectionAnalytics(engine, collectionId);
   return c.json(analytics);
+});
+
+billing.put('/collections/:id', async (c) => {
+  const auth = requireAuth(c);
+  if (auth instanceof Response) return auth;
+  const { user } = auth;
+  const db = drizzle(c.env.semaphore_db);
+  const collectionId = c.req.param('id');
+
+  const key = await db
+    .select()
+    .from(sqliteSchema.apiKey)
+    .where(
+      and(
+        eq(sqliteSchema.apiKey.collectionId, collectionId),
+        eq(sqliteSchema.apiKey.userId, user.id)
+      )
+    )
+    .get();
+
+  if (!key) {
+    return c.json({ error: 'Collection not found' }, 404);
+  }
+
+  const body = await c.req.json();
+  const engine = getEngine(c.env);
+  const result = await updateCollection(engine, collectionId, {
+    name: body.name,
+    callbackUrl: body.callbackUrl,
+  });
+  return c.json(result);
 });
 
 billing.delete('/collections/:id', async (c) => {
@@ -370,7 +402,14 @@ billing.delete('/collections/:collectionId/plans/:planId', async (c) => {
   const env = await getCollectionEnvironment(c.env.semaphore_db, collectionId);
   const planEnv = env === 'sandbox' ? 'development' : 'production';
 
-  await remove(engine, { planId }, { collectionId, environment: planEnv });
+  try {
+    await remove(engine, { planId }, { collectionId, environment: planEnv });
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('active subscriptions')) {
+      return c.json({ error: err.message }, 409);
+    }
+    throw err;
+  }
   return c.json({ success: true });
 });
 
@@ -814,6 +853,18 @@ billing.get(
   }
 );
 
+billing.post(
+  '/collections/:collectionId/metrics/refresh',
+  async (c) => {
+    const auth = requireAuth(c);
+    if (auth instanceof Response) return auth;
+    const engine = getEngine(c.env);
+    const collectionId = c.req.param('collectionId');
+    const snapshot = await captureMetrics(engine, collectionId);
+    return c.json({ success: true, snapshot });
+  }
+);
+
 // ── Balance ──────────────────────────────────────────────
 
 billing.get(
@@ -850,3 +901,15 @@ billing.get(
 );
 
 export { billing as BillingRoutes };
+
+// ==================== CRON ====================
+
+billing.post('/collections/:collectionId/cron/run', async (c) => {
+  const auth = requireAuth(c);
+  if (auth instanceof Response) return auth;
+  const engine = getEngine(c.env);
+  const collectionId = c.req.param('collectionId');
+
+  const result = await runSemaphorePayCron(engine);
+  return c.json(result);
+});

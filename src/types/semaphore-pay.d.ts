@@ -17,7 +17,7 @@ declare module '@semaphore-pay/server' {
 
   export function initSemaphorePay<T extends 'pg' | 'sqlite'>(config: SemaphorePayConfig<T>): SemaphorePayEngine<T>;
   export function createSemaphorePayRouter(engine: SemaphorePayEngine<any>, options?: any): any;
-  export function createCollection(engine: SemaphorePayEngine<any>, name: string): Promise<any>;
+  export function createCollection(engine: SemaphorePayEngine<any>, name: string, environment?: string, callbackUrl?: string): Promise<any>;
   export function createApiKey(engine: SemaphorePayEngine<any>, input: any): Promise<any>;
   export function createProduct(engine: SemaphorePayEngine<any>, input: any): Promise<any>;
   export function listProducts(engine: SemaphorePayEngine<any>, input: any): Promise<any>;

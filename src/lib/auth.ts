@@ -5,7 +5,11 @@ import * as schema from '../db/schema';
 import { HonoEnv } from '../types';
 import { magicLink } from 'better-auth/plugins';
 import { APIError } from 'better-auth/api';
-import { initSemaphorePay, createCollection, createApiKey } from '@semaphore-pay/server';
+import {
+  initSemaphorePay,
+  createCollection,
+  createApiKey,
+} from '@semaphore-pay/server';
 
 import { magicLinkEmail } from '../data/email-templates/magicLinkEmail';
 
@@ -43,6 +47,8 @@ export const getAuth = (env: HonoEnv['Bindings']) => {
       'https://dash.semaphorepay.tech',
       'exp://127.0.0.1:8081',
       'http://localhost:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5174',
     ],
     plugins: [
       magicLink({
@@ -70,9 +76,13 @@ export const getAuth = (env: HonoEnv['Bindings']) => {
     databaseHooks: {
       user: {
         create: {
-          after: async (user) => {
+          after: async user => {
             const db = drizzle(env.semaphore_db);
-            const engine = initSemaphorePay({ dialect: 'sqlite', db, supportsTransactions: false });
+            const engine = initSemaphorePay({
+              dialect: 'sqlite',
+              db,
+              supportsTransactions: false,
+            });
             const collection = await createCollection(engine, 'Sandbox');
             await createApiKey(engine, {
               collectionId: collection.id,

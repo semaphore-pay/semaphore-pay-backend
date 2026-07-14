@@ -1,0 +1,1 @@
+ALTER TABLE `semaphore_pay_collection` ADD `callback_url` text;

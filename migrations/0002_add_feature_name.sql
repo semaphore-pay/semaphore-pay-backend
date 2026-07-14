@@ -1,1 +1,0 @@
-ALTER TABLE `semaphore_pay_feature` ADD `name` text NOT NULL DEFAULT '';

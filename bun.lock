@@ -6,7 +6,7 @@
       "name": "semaphore-pay-backend",
       "dependencies": {
         "@hono/zod-validator": "^0.8.0",
-        "@semaphore-pay/server": "^0.1.39",
+        "@semaphore-pay/server": "^0.1.40",
         "better-auth": "^1.6.23",
         "drizzle-orm": "^0.45.2",
         "hono": "^4.12.27",
@@ -101,7 +101,7 @@
 
     "@poppinss/exception": ["@poppinss/exception@1.2.3", "", {}, ""],
 
-    "@semaphore-pay/server": ["@semaphore-pay/server@0.1.39", "", { "dependencies": { "better-auth": "^1.6.20", "drizzle-orm": "^0.45.2", "hono": "^4.12.27", "ioredis": "^5.11.1" } }, "sha512-lQeQvSt9P8FG8uZ0jIykegl8O9CHL4IOMcMw+F0BuKdx2T3fI2IeZMqLozua+Ene/B8Z2a0ju3TVE4QoNbHsHQ=="],
+    "@semaphore-pay/server": ["@semaphore-pay/server@0.1.40", "", { "dependencies": { "better-auth": "^1.6.20", "drizzle-orm": "^0.45.2", "hono": "^4.12.27", "ioredis": "^5.11.1" } }, "sha512-JNv2D1l/yLD6Q6G5uP1nO2Y9s8/nN7nt5LSn4R9CRLnZu7dFjq5nHxW+fFOCkE7a4duX0HTCh1rTlFdLFg2VNA=="],
 
     "@sindresorhus/is": ["@sindresorhus/is@7.2.0", "", {}, ""],
 
@@ -328,6 +328,8 @@
     "randomatic": ["randomatic@3.1.1", "", { "dependencies": { "is-number": "^4.0.0", "kind-of": "^6.0.0", "math-random": "^1.0.1" } }, ""],
 
     "rc": ["rc@1.2.8", "", { "dependencies": { "deep-extend": "^0.6.0", "ini": "~1.3.0", "minimist": "^1.2.0", "strip-json-comments": "~2.0.1" }, "bin": "cli.js" }, ""],
+
+    "react": ["react@19.2.7", "", {}, "sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ=="],
 
     "readable-stream": ["readable-stream@2.3.8", "", { "dependencies": { "core-util-is": "~1.0.0", "inherits": "~2.0.3", "isarray": "~1.0.0", "process-nextick-args": "~2.0.0", "safe-buffer": "~5.1.1", "string_decoder": "~1.1.1", "util-deprecate": "~1.0.1" } }, ""],
 

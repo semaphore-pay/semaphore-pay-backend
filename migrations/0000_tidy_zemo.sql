@@ -1,3 +1,124 @@
+CREATE TABLE `account` (
+	`id` text PRIMARY KEY NOT NULL,
+	`accountId` text NOT NULL,
+	`providerId` text NOT NULL,
+	`userId` text NOT NULL,
+	`accessToken` text,
+	`refreshToken` text,
+	`idToken` text,
+	`accessTokenExpiresAt` integer,
+	`refreshTokenExpiresAt` integer,
+	`scope` text,
+	`password` text,
+	`createdAt` integer NOT NULL,
+	`updatedAt` integer NOT NULL,
+	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE TABLE `semaphore_pay_balance` (
+	`id` text PRIMARY KEY NOT NULL,
+	`collection_id` text NOT NULL,
+	`available` integer DEFAULT 0 NOT NULL,
+	`pending` integer DEFAULT 0 NOT NULL,
+	`total_earned` integer DEFAULT 0 NOT NULL,
+	`platform_fee_rate` integer DEFAULT 135 NOT NULL,
+	`currency` text DEFAULT 'NGN' NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `semaphore_pay_balance_collection_idx` ON `semaphore_pay_balance` (`collection_id`);--> statement-breakpoint
+CREATE TABLE `semaphore_pay_metric_snapshot` (
+	`id` text PRIMARY KEY NOT NULL,
+	`collection_id` text NOT NULL,
+	`date` text NOT NULL,
+	`features` integer DEFAULT 0 NOT NULL,
+	`boolean_features` integer DEFAULT 0 NOT NULL,
+	`limit_features` integer DEFAULT 0 NOT NULL,
+	`plans` integer DEFAULT 0 NOT NULL,
+	`active_plans` integer DEFAULT 0 NOT NULL,
+	`products` integer DEFAULT 0 NOT NULL,
+	`customers` integer DEFAULT 0 NOT NULL,
+	`active_subscriptions` integer DEFAULT 0 NOT NULL,
+	`trialing_subscriptions` integer DEFAULT 0 NOT NULL,
+	`churned_subscriptions` integer DEFAULT 0 NOT NULL,
+	`mrr` integer DEFAULT 0 NOT NULL,
+	`created_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `semaphore_pay_metric_snapshot_collection_date_idx` ON `semaphore_pay_metric_snapshot` (`collection_id`,`date`);--> statement-breakpoint
+CREATE TABLE `semaphore_pay_payout` (
+	`id` text PRIMARY KEY NOT NULL,
+	`collection_id` text NOT NULL,
+	`amount` integer NOT NULL,
+	`fee` integer DEFAULT 0 NOT NULL,
+	`net_amount` integer NOT NULL,
+	`status` text DEFAULT 'pending' NOT NULL,
+	`bank_account_number` text,
+	`bank_code` text,
+	`bank_name` text,
+	`account_name` text,
+	`nomba_transfer_id` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `semaphore_pay_payout_collection_idx` ON `semaphore_pay_payout` (`collection_id`);--> statement-breakpoint
+CREATE TABLE `session` (
+	`id` text PRIMARY KEY NOT NULL,
+	`expiresAt` integer NOT NULL,
+	`token` text NOT NULL,
+	`createdAt` integer NOT NULL,
+	`updatedAt` integer NOT NULL,
+	`ipAddress` text,
+	`userAgent` text,
+	`userId` text NOT NULL,
+	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `session_token_unique` ON `session` (`token`);--> statement-breakpoint
+CREATE TABLE `system_logs` (
+	`log_id` text PRIMARY KEY NOT NULL,
+	`level` text NOT NULL,
+	`message` text NOT NULL,
+	`context` text,
+	`user_id` text,
+	`meta` text,
+	`retain_until` integer NOT NULL,
+	`created_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `system_logs_level_idx` ON `system_logs` (`level`);--> statement-breakpoint
+CREATE INDEX `system_logs_user_idx` ON `system_logs` (`user_id`);--> statement-breakpoint
+CREATE INDEX `system_logs_retain_idx` ON `system_logs` (`retain_until`);--> statement-breakpoint
+CREATE INDEX `system_logs_created_idx` ON `system_logs` (`created_at`);--> statement-breakpoint
+CREATE TABLE `user` (
+	`id` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`email` text NOT NULL,
+	`emailVerified` integer NOT NULL,
+	`image` text,
+	`createdAt` integer NOT NULL,
+	`updatedAt` integer NOT NULL,
+	`phoneNumber` text,
+	`phoneNumberVerified` integer DEFAULT false,
+	`role` text DEFAULT 'buyer' NOT NULL,
+	`username` text,
+	`businessType` text DEFAULT 'none' NOT NULL,
+	`profileSetupComplete` integer DEFAULT false NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
+CREATE UNIQUE INDEX `user_phoneNumber_unique` ON `user` (`phoneNumber`);--> statement-breakpoint
+CREATE TABLE `verification` (
+	`id` text PRIMARY KEY NOT NULL,
+	`identifier` text NOT NULL,
+	`value` text NOT NULL,
+	`expiresAt` integer NOT NULL,
+	`createdAt` integer,
+	`updatedAt` integer
+);
+--> statement-breakpoint
 CREATE TABLE `semaphore_pay_api_key` (
 	`key` text PRIMARY KEY NOT NULL,
 	`collection_id` text NOT NULL,
@@ -14,6 +135,8 @@ CREATE INDEX `semaphore_pay_api_key_user_idx` ON `semaphore_pay_api_key` (`user_
 CREATE TABLE `semaphore_pay_collection` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
+	`environment` text DEFAULT 'sandbox' NOT NULL,
+	`callback_url` text,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
 );
@@ -56,10 +179,14 @@ CREATE TABLE `semaphore_pay_entitlement` (
 CREATE INDEX `semaphore_pay_entitlement_customer_feature_idx` ON `semaphore_pay_entitlement` (`customer_id`,`feature_id`);--> statement-breakpoint
 CREATE INDEX `semaphore_pay_entitlement_source_idx` ON `semaphore_pay_entitlement` (`source_type`,`source_id`);--> statement-breakpoint
 CREATE TABLE `semaphore_pay_feature` (
-	`id` text PRIMARY KEY NOT NULL,
+	`id` text NOT NULL,
+	`collection_id` text NOT NULL,
+	`name` text NOT NULL,
 	`type` text NOT NULL,
 	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL
+	`updated_at` integer NOT NULL,
+	PRIMARY KEY(`id`, `collection_id`),
+	FOREIGN KEY (`collection_id`) REFERENCES `semaphore_pay_collection`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
 CREATE TABLE `semaphore_pay_invoice` (
@@ -103,7 +230,7 @@ CREATE TABLE `semaphore_pay_payment_method` (
 CREATE INDEX `semaphore_pay_payment_method_customer_idx` ON `semaphore_pay_payment_method` (`customer_id`);--> statement-breakpoint
 CREATE INDEX `semaphore_pay_payment_method_nomba_idx` ON `semaphore_pay_payment_method` (`nomba_token_id`);--> statement-breakpoint
 CREATE TABLE `semaphore_pay_plan` (
-	`id` text PRIMARY KEY NOT NULL,
+	`id` text NOT NULL,
 	`collection_id` text NOT NULL,
 	`environment` text DEFAULT 'development' NOT NULL,
 	`name` text NOT NULL,
@@ -119,6 +246,7 @@ CREATE TABLE `semaphore_pay_plan` (
 	`is_active` integer DEFAULT true NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
+	PRIMARY KEY(`id`, `collection_id`, `environment`),
 	FOREIGN KEY (`collection_id`) REFERENCES `semaphore_pay_collection`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
@@ -154,7 +282,7 @@ CREATE TABLE `semaphore_pay_product` (
 	FOREIGN KEY (`collection_id`) REFERENCES `semaphore_pay_collection`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `semaphore_pay_product_id_version_unique` ON `semaphore_pay_product` (`id`,`version`);--> statement-breakpoint
+CREATE UNIQUE INDEX `semaphore_pay_product_id_version_unique` ON `semaphore_pay_product` (`collection_id`,`id`,`version`);--> statement-breakpoint
 CREATE INDEX `semaphore_pay_product_collection_env_idx` ON `semaphore_pay_product` (`collection_id`,`environment`);--> statement-breakpoint
 CREATE TABLE `semaphore_pay_product_feature` (
 	`product_internal_id` text NOT NULL,
@@ -231,8 +359,4 @@ CREATE TABLE `semaphore_pay_webhook_event` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `semaphore_pay_webhook_event_nomba_event_id_unique` ON `semaphore_pay_webhook_event` (`nomba_event_id`);--> statement-breakpoint
-CREATE INDEX `semaphore_pay_webhook_event_status_idx` ON `semaphore_pay_webhook_event` (`status`);--> statement-breakpoint
-ALTER TABLE `user` ADD `role` text DEFAULT 'buyer' NOT NULL;--> statement-breakpoint
-ALTER TABLE `user` ADD `username` text;--> statement-breakpoint
-ALTER TABLE `user` ADD `businessType` text DEFAULT 'none' NOT NULL;--> statement-breakpoint
-ALTER TABLE `user` ADD `profileSetupComplete` integer DEFAULT false NOT NULL;
+CREATE INDEX `semaphore_pay_webhook_event_status_idx` ON `semaphore_pay_webhook_event` (`status`);

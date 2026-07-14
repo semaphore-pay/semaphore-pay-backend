@@ -14,7 +14,8 @@ import {
   initSemaphorePay,
   createSemaphorePayRouter,
 } from '@semaphore-pay/server';
-import { NombaClient } from '@semaphore-pay/server/nomba';
+import { buildChargeFn } from '@semaphore-pay/server/nomba/charge-fn';
+import { initNombaClients, getNombaClients } from './lib/nomba';
 import { captureMetrics } from './services/metrics';
 
 const app = new Hono<HonoEnv>();
@@ -98,41 +99,17 @@ const sdkEnginePlaceholder = initSemaphorePay({
 
 // Pre-built Nomba clients — created once per env, cached forever.
 // Avoids race condition from shared mutable options.
-let nombaSandbox: any = null;
-let nombaLive: any = null;
-let nombaCallbackUrl: string = '';
-
-function getOrCreateNombaClients(env: any) {
-  if (!nombaCallbackUrl)
-    nombaCallbackUrl = env.NOMBA_CHECKOUT_CALLBACK_URL ?? '';
-  if (!nombaSandbox && env.NOMBA_SANDBOX_CLIENT_ID) {
-    nombaSandbox = new NombaClient({
-      clientId: env.NOMBA_SANDBOX_CLIENT_ID,
-      clientSecret: env.NOMBA_SANDBOX_CLIENT_SECRET,
-      accountId: env.NOMBA_SANDBOX_ACCOUNT_ID,
-      environment: 'sandbox',
-    });
-  }
-  if (!nombaLive && env.NOMBA_LIVE_CLIENT_ID) {
-    nombaLive = new NombaClient({
-      clientId: env.NOMBA_LIVE_CLIENT_ID,
-      clientSecret: env.NOMBA_LIVE_CLIENT_SECRET,
-      accountId: env.NOMBA_LIVE_ACCOUNT_ID,
-      environment: 'production',
-    });
-  }
-}
 
 const sdkRouter = createSemaphorePayRouter(sdkEnginePlaceholder, {
   nombaClients: {
     get sandbox() {
-      return nombaSandbox;
+      return getNombaClients().sandbox;
     },
     get production() {
-      return nombaLive;
+      return getNombaClients().production;
     },
     get callbackUrl() {
-      return nombaCallbackUrl;
+      return getNombaClients().callbackUrl;
     },
   },
 });
@@ -148,7 +125,7 @@ app.use('/client/*', async (c, next) => {
   (c.env as any)._semaphorePayApiKeySchema = engine.schema.apiKey;
 
   // Lazily create Nomba clients from env (first request only)
-  getOrCreateNombaClients(c.env);
+  initNombaClients(c.env);
 
   await next();
 });
@@ -168,10 +145,18 @@ const handler = {
       supportsTransactions: false,
     });
 
+    // Ensure Nomba clients are initialized
+    initNombaClients(env);
+    const clients = getNombaClients();
+    const chargeFn =
+      clients.sandbox || clients.production
+        ? buildChargeFn(clients, clients.callbackUrl)
+        : undefined;
+
     ctx.waitUntil(
       (async () => {
         // Run existing package cron
-        await runSemaphorePayCron(engine);
+        await runSemaphorePayCron(engine, chargeFn);
 
         // Capture metrics for each collection
         const cols = await db

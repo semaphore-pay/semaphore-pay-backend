@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, sql } from 'drizzle-orm';
-import { initSemaphorePay, createCollection, createApiKey, runSemaphorePayCron } from '@semaphore-pay/server';
+import { initSemaphorePay, createCollection, createApiKey, runSemaphorePayCron, buildChargeFn } from '@semaphore-pay/server';
 import { updateCollection } from '@semaphore-pay/server/api';
 import { createProduct, listProducts, getProduct, updateProduct, deleteProduct } from '@semaphore-pay/server/product';
 import { create, list, get, deactivate, reactivatePlanApi, remove } from '@semaphore-pay/server/plan';
@@ -15,6 +15,7 @@ import { requireAuth } from '../../lib/auth';
 import { checkQuota } from '../../services/quotas';
 import { getCollectionStats, getCollectionAnalytics } from '../../services/analytics';
 import { getMetricTrend, getMetricHistory, captureMetrics } from '../../services/metrics';
+import { getNombaClients } from '../../lib/nomba';
 import { balance } from '../../db/schema';
 import { logger } from '../../lib/logger';
 import {
@@ -910,6 +911,13 @@ billing.post('/collections/:collectionId/cron/run', async (c) => {
   const engine = getEngine(c.env);
   const collectionId = c.req.param('collectionId');
 
-  const result = await runSemaphorePayCron(engine);
+  // Determine collection environment and build chargeFn with correct Nomba client
+  const environment = await getCollectionEnvironment(c.env.semaphore_db, collectionId);
+  const clients = getNombaClients();
+  const chargeFn = (clients.sandbox || clients.production)
+    ? buildChargeFn(clients, clients.callbackUrl)
+    : undefined;
+
+  const result = await runSemaphorePayCron(engine, chargeFn);
   return c.json(result);
 });

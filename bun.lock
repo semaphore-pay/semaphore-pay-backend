@@ -6,7 +6,7 @@
       "name": "semaphore-pay-backend",
       "dependencies": {
         "@hono/zod-validator": "^0.8.0",
-        "@semaphore-pay/server": "^0.1.36",
+        "@semaphore-pay/server": "^0.1.39",
         "better-auth": "^1.6.23",
         "drizzle-orm": "^0.45.2",
         "hono": "^4.12.27",
@@ -101,7 +101,7 @@
 
     "@poppinss/exception": ["@poppinss/exception@1.2.3", "", {}, ""],
 
-    "@semaphore-pay/server": ["@semaphore-pay/server@0.1.36", "", { "dependencies": { "better-auth": "^1.6.20", "drizzle-orm": "^0.45.2", "hono": "^4.12.27", "ioredis": "^5.11.1" } }, "sha512-cnnR84bY3+hPwwKU39rbVrn41Djo8MewvyY5iF4dR1FHIN2bs4hU+0T7G/A5vQPyGCowCTr/eAzIsaGPEsE31Q=="],
+    "@semaphore-pay/server": ["@semaphore-pay/server@0.1.39", "", { "dependencies": { "better-auth": "^1.6.20", "drizzle-orm": "^0.45.2", "hono": "^4.12.27", "ioredis": "^5.11.1" } }, "sha512-lQeQvSt9P8FG8uZ0jIykegl8O9CHL4IOMcMw+F0BuKdx2T3fI2IeZMqLozua+Ene/B8Z2a0ju3TVE4QoNbHsHQ=="],
 
     "@sindresorhus/is": ["@sindresorhus/is@7.2.0", "", {}, ""],
 
